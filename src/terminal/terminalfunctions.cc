@@ -50,6 +50,26 @@ static void clearline( Framebuffer *fb, int row, int start, int end )
   }
 }
 
+/* cursor style */
+static void CSI_DECSCUSR( Framebuffer *fb, Dispatcher *dispatch ) {
+  int style = dispatch->getparam( 0, 0 );
+  switch ( style ) {
+  case CursorStyle::BLINKING_BLOCK:
+  case CursorStyle::BLINKING_BLOCK_DEFAULT:
+  case CursorStyle::STEADY_BLOCK:
+  case CursorStyle::BLINKING_UNDERLINE:
+  case CursorStyle::STEADY_UNDERLINE:
+  case CursorStyle::BLINKING_BAR:
+  case CursorStyle::STEADY_BAR:
+    fb->ds.cursor_style = style;
+    break;
+  default:
+    break;
+  }
+}
+
+static Function func_CSI_DECSCUSR( CSI, " q", CSI_DECSCUSR );
+
 /* erase in line */
 static void CSI_EL( Framebuffer *fb, Dispatcher *dispatch )
 {
@@ -598,6 +618,15 @@ void Dispatcher::OSC_dispatch( const Parser::OSC_End *act __attribute((unused)),
       Terminal::Framebuffer::title_type clipboard(
               OSC_string.begin() + 5, OSC_string.end() );
       fb->set_clipboard( clipboard );
+  /* handle osc cursor color sequence */
+  } else if ( OSC_string.size() >= 3 && OSC_string[ 0 ] == L'1' ) {
+    if ( OSC_string[ 1 ] == L'2' && OSC_string[ 2 ] == L';') {
+      Terminal::Framebuffer::title_type cursor_color(
+              OSC_string.begin() + 3, OSC_string.end() );
+      fb->set_cursor_color( cursor_color );
+    } else if ( OSC_string[ 1 ] == L'1' && OSC_string[ 2 ] == L'2' ) {
+      fb->reset_cursor_color();
+    }
   /* handle osc terminal title sequence */
   } else if ( OSC_string.size() >= 1 ) {
     long cmd_num = -1;
