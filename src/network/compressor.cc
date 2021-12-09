@@ -30,35 +30,88 @@
     also delete it here.
 */
 
-#include <zlib.h>
+#include <new>
+#include <stdint.h>
+#include <stdlib.h>
+#include <zstd.h>
 
 #include "compressor.h"
 #include "dos_assert.h"
 
+#define MINCLEVEL 1
+#define MAXCLEVEL ZSTD_maxCLevel()
+#define DEFCLEVEL ZSTD_defaultCLevel()
+
 using namespace Network;
 using std::string;
 
+static uint8_t get_zstd_level()
+{
+  const uint8_t default_level = static_cast<uint8_t>( DEFCLEVEL );
+
+  const char *level_envar = getenv( "MOSH_COMPRESSION_LEVEL" );
+  if (!level_envar) {
+    return default_level;
+  }
+
+  char *endptr;
+  const uint8_t level = static_cast<uint8_t>( strtol( level_envar, &endptr, 10 ));
+  if ( MINCLEVEL <= level && level <= MAXCLEVEL ) {
+    return level;
+  } else {
+	  fprintf( stderr, "Warning: %d is invalid value for MOSH_COMPRESSION_LEVEL [%d-%d], use default (%d).\n",
+	         level, MINCLEVEL, MAXCLEVEL, default_level );
+  }
+
+  return default_level;
+}
+
 string Compressor::compress_str( const string &input )
 {
-  long unsigned int len = BUFFER_SIZE;
-  dos_assert( Z_OK == compress( buffer, &len,
-				reinterpret_cast<const unsigned char *>( input.data() ),
-				input.size() ) );
-  return string( reinterpret_cast<char *>( buffer ), len );
+  size_t const compressedSize = ZSTD_compressCCtx(
+      cctx, buffer, bufferSize, reinterpret_cast<const unsigned char *>( input.data() ), input.size(), level );
+  dos_assert( !ZSTD_isError(compressedSize) );
+  return string( reinterpret_cast<char *>( buffer ), compressedSize );
 }
 
 string Compressor::uncompress_str( const string &input )
 {
-  long unsigned int len = BUFFER_SIZE;
-  dos_assert( Z_OK == uncompress( buffer, &len,
-				  reinterpret_cast<const unsigned char *>( input.data() ),
-				  input.size() ) );
-  return string( reinterpret_cast<char *>( buffer ), len );
+  size_t const decompressedSize = ZSTD_decompressDCtx(
+      dctx, buffer, bufferSize, reinterpret_cast<const unsigned char *>( input.data() ), input.size() );
+  dos_assert( !ZSTD_isError(decompressedSize) );
+  return string( reinterpret_cast<char *>( buffer ), decompressedSize );
 }
 
 /* construct on first use */
 Compressor & Network::get_compressor( void )
 {
-  static Compressor the_compressor;
+  static Compressor the_compressor = Compressor( ZSTD_compressBound( Compressor::BUFFER_SIZE ), get_zstd_level() );
   return the_compressor;
+}
+
+Compressor::Compressor( const size_t bufSize, const uint8_t level )
+  : bufferSize( bufSize ),
+    buffer( malloc( bufSize ) ),
+    cctx( ZSTD_createCCtx() ),
+    dctx( ZSTD_createDCtx() ),
+    level( level )
+{
+  if ( buffer == NULL ) {
+    throw std::bad_alloc();
+  }
+
+  if ( cctx == NULL ) {
+    throw std::bad_alloc();
+  }
+
+  if ( dctx == NULL ) {
+    throw std::bad_alloc();
+  }
+}
+
+Compressor::~Compressor()
+{
+  free( buffer );
+  ZSTD_freeCCtx( cctx );
+  ZSTD_freeDCtx( dctx );
 }
