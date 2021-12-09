@@ -69,6 +69,7 @@ DrawState::DrawState( int s_width, int s_height )
     combining_char_col( 0 ), combining_char_row( 0 ), default_tabs( true ), tabs( s_width ),
     scrolling_region_top_row( 0 ), scrolling_region_bottom_row( height - 1 ),
     renditions( 0 ), save(),
+    cursor_style( Terminal::CursorStyle::BLINKING_BLOCK ),
     next_print_will_wrap( false ), origin_mode( false ), auto_wrap_mode( true ),
     insert_mode( false ), cursor_visible( true ), reverse_video( false ),
     bracketed_paste( false ), mouse_reporting_mode( MOUSE_REPORTING_NONE ), mouse_focus_event( false ),
@@ -78,7 +79,7 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows(), icon_name(), window_title(), clipboard(), bell_count( 0 ), title_initialized( false ), ds( s_width, s_height )
+  : rows(), icon_name(), window_title(), clipboard(), cursor_color(), bell_count( 0 ), cursor_color_reset_count( 0 ), title_initialized( false ), ds( s_width, s_height )
 {
   assert( s_height > 0 );
   assert( s_width > 0 );
@@ -89,7 +90,8 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 
 Framebuffer::Framebuffer( const Framebuffer &other )
   : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
-    clipboard( other.clipboard ), bell_count( other.bell_count ),
+    clipboard( other.clipboard ), cursor_color( other.cursor_color ), bell_count( other.bell_count ),
+    cursor_color_reset_count( other.cursor_color_reset_count ),
     title_initialized( other.title_initialized ), ds( other.ds )
 {
 }
@@ -101,7 +103,9 @@ Framebuffer & Framebuffer::operator=( const Framebuffer &other )
     icon_name =  other.icon_name;
     window_title = other.window_title;
     clipboard = other.clipboard;
+    cursor_color = other.cursor_color;
     bell_count = other.bell_count;
+    cursor_color_reset_count = other.cursor_color_reset_count;
     title_initialized = other.title_initialized;
     ds = other.ds;
   }
@@ -384,7 +388,9 @@ void Framebuffer::reset( void )
   rows = rows_type( height, newrow() );
   window_title.clear();
   clipboard.clear();
+  cursor_color.clear();
   /* do not reset bell_count */
+  /* do not reset cursor_color_reset_count */
 }
 
 void Framebuffer::soft_reset( void )
@@ -392,6 +398,7 @@ void Framebuffer::soft_reset( void )
   ds.insert_mode = false;
   ds.origin_mode = false;
   ds.cursor_visible = true; /* per xterm and gnome-terminal */
+  ds.cursor_style = Terminal::CursorStyle::BLINKING_BLOCK;
   ds.application_mode_cursor_keys = false;
   ds.set_scrolling_region( 0, ds.get_height() - 1 );
   ds.add_rendition( 0 );
