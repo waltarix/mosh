@@ -319,8 +319,6 @@ int main( int argc, char *argv[] )
     my_argv[ 0 ] = const_cast<char *>( shell_name.c_str() );
     my_argv[ 1 ] = NULL;
     command_argv = my_argv;
-
-    with_motd = true;
   }
 
   if ( command_path.empty() ) {
@@ -554,12 +552,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
     const char color_term[] = "xterm-256color";
 
     if ( setenv( "TERM", (colors == 256) ? color_term : default_term, true ) < 0 ) {
-      perror( "setenv" );
-      exit( 1 );
-    }
-
-    /* ask ncurses to send UTF-8 instead of ISO 2022 for line-drawing chars */
-    if ( setenv( "NCURSES_NO_UTF8_ACS", "1", true ) < 0 ) {
       perror( "setenv" );
       exit( 1 );
     }
