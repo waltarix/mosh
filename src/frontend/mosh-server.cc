@@ -319,8 +319,6 @@ int main( int argc, char *argv[] )
     my_argv[ 0 ] = const_cast<char *>( shell_name.c_str() );
     my_argv[ 1 ] = NULL;
     command_argv = my_argv;
-
-    with_motd = true;
   }
 
   if ( command_path.empty() ) {
@@ -504,9 +502,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
     }
   }
 
-  char utmp_entry[ 64 ] = { 0 };
-  snprintf( utmp_entry, 64, "mosh [%ld]", static_cast<long int>( getpid() ) );
-
   /* Fork child process */
   pid_t child = forkpty( &master, NULL, NULL, &window_size );
 
@@ -558,12 +553,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
       exit( 1 );
     }
 
-    /* ask ncurses to send UTF-8 instead of ISO 2022 for line-drawing chars */
-    if ( setenv( "NCURSES_NO_UTF8_ACS", "1", true ) < 0 ) {
-      perror( "setenv" );
-      exit( 1 );
-    }
-
     /* clear STY environment variable so GNU screen regards us as top level */
     if ( unsetenv( "STY" ) < 0 ) {
       perror( "unsetenv" );
@@ -587,7 +576,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
       // Always print traditional /etc/motd.
       print_motd("/etc/motd");
 #endif
-      warn_unattached( utmp_entry );
     }
 
     /* Wait for parent to release us. */
@@ -613,11 +601,6 @@ static int run_server( const char *desired_ip, const char *desired_port,
       perror( "pledge() failed" );
       exit( 1 );
     }
-#endif
-
-#ifdef HAVE_UTEMPTER
-    /* make utmp entry */
-    utempter_add_record( master, utmp_entry );
 #endif
 
     try {
