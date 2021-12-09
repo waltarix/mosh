@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - mosh-[0-9]+.[0-9]+-custom
+      - mosh-[0-9]+.[0-9]+-custom-r[0-9]+
+      - mosh-[0-9]+.[0-9]+.[0-9]+-custom
+      - mosh-[0-9]+.[0-9]+.[0-9]+-custom-r[0-9]+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev libutempter-dev
+
+    - name: Build
+      run: ./autogen.sh && ./configure && make dist-xz
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: '*.tar.xz'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
