@@ -261,7 +261,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     }
 
     wchar_t ch = *i;
-    int chwidth = ch == L'\0' ? -1 : wcwidth( ch );
+    int chwidth = ch == L'\0' ? -1 : wcwidth9( ch );
     Cell *this_cell = 0;
 
     switch ( chwidth ) {
@@ -297,7 +297,7 @@ void NotificationEngine::apply( Framebuffer &fb ) const
     case -1: /* unprintable character */
       break;
     default:
-      assert( !"unexpected character width from wcwidth()" );
+      assert( !"unexpected character width from wcwidth9()" );
     }
   }
 }
@@ -743,7 +743,7 @@ void PredictionEngine::new_user_byte( char the_byte, const Framebuffer &fb )
 	    }
 	  }
 	}
-      } else if ( (ch < 0x20) || (wcwidth( ch ) != 1) ) {
+      } else if ( (ch < 0x20) || (wcwidth9( ch ) != 1) ) {
 	/* unknown print */
 	become_tentative();
 	//	fprintf( stderr, "Unknown print 0x%x\n", ch );

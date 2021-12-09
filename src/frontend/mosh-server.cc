@@ -319,8 +319,6 @@ int main( int argc, char *argv[] )
     my_argv[ 0 ] = const_cast<char *>( shell_name.c_str() );
     my_argv[ 1 ] = NULL;
     command_argv = my_argv;
-
-    with_motd = true;
   }
 
   if ( command_path.empty() ) {
