@@ -235,6 +235,14 @@ if ( defined $port_request ) {
 
 delete $ENV{ 'MOSH_PREDICTION_DISPLAY' };
 
+my $compression_level = undef;
+if ( defined $ENV{ 'MOSH_COMPRESSION_LEVEL' } ) {
+  $compression_level = int($ENV{ 'MOSH_COMPRESSION_LEVEL' });
+  if ( $compression_level <= 0 ) {
+    die "$0: $compression_level is invalid value for MOSH_COMPRESSION_LEVEL.\n"
+  }
+}
+
 my $userhost;
 my @command;
 my @bind_arguments;
@@ -406,7 +414,12 @@ if ( $pid == 0 ) { # child
     my $quoted_proxy_command = shell_quote( $0, "--family=$family" );
     push @sshopts, ( '-S', 'none', '-o', "ProxyCommand=$quoted_proxy_command --fake-proxy -- %h %p" );
   }
-  my @exec_argv = ( @ssh, @sshopts, $userhost, '--', $ssh_connection . "$server " . shell_quote( @server ) );
+  my $compression_level_envstr = "";
+  if ( defined $compression_level ) {
+    $compression_level_envstr = "MOSH_COMPRESSION_LEVEL=$compression_level";
+  }
+  my @exec_argv = ( @ssh, @sshopts, $userhost, '--',
+                    $ssh_connection . "$compression_level_envstr " . "$server " . shell_quote( @server ) );
   exec @exec_argv;
   die "Cannot exec ssh: $!\n";
 } else { # parent

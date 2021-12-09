@@ -43,6 +43,7 @@
 #include "terminaldispatcher.h"
 #include "terminaldisplay.h"
 #include "terminaluserinput.h"
+#include "src/util/wcwidth9.h"
 
 namespace Terminal {
 class Emulator

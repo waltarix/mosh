@@ -171,16 +171,12 @@ Transition CSI_Entry::input_state_rule( wchar_t ch ) const
     return Transition( std::make_shared<CSI_Dispatch>(), &family->s_Ground );
   }
 
-  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) ) {
+  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) || ( ch == 0x3A ) ) {
     return Transition( std::make_shared<Param>(), &family->s_CSI_Param );
   }
 
   if ( ( 0x3C <= ch ) && ( ch <= 0x3F ) ) {
     return Transition( std::make_shared<Collect>(), &family->s_CSI_Param );
-  }
-
-  if ( ch == 0x3A ) {
-    return Transition( &family->s_CSI_Ignore );
   }
 
   if ( ( 0x20 <= ch ) && ( ch <= 0x2F ) ) {
@@ -196,11 +192,11 @@ Transition CSI_Param::input_state_rule( wchar_t ch ) const
     return Transition( std::make_shared<Execute>() );
   }
 
-  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) ) {
+  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) || ( ch == 0x3A ) ) {
     return Transition( std::make_shared<Param>() );
   }
 
-  if ( ( ch == 0x3A ) || ( ( 0x3C <= ch ) && ( ch <= 0x3F ) ) ) {
+  if ( ( 0x3C <= ch ) && ( ch <= 0x3F ) ) {
     return Transition( &family->s_CSI_Ignore );
   }
 
@@ -260,11 +256,7 @@ Transition DCS_Entry::input_state_rule( wchar_t ch ) const
     return Transition( std::make_shared<Collect>(), &family->s_DCS_Intermediate );
   }
 
-  if ( ch == 0x3A ) {
-    return Transition( &family->s_DCS_Ignore );
-  }
-
-  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) ) {
+  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) || ( ch == 0x3A ) ) {
     return Transition( std::make_shared<Param>(), &family->s_DCS_Param );
   }
 
@@ -281,11 +273,11 @@ Transition DCS_Entry::input_state_rule( wchar_t ch ) const
 
 Transition DCS_Param::input_state_rule( wchar_t ch ) const
 {
-  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) ) {
+  if ( ( ( 0x30 <= ch ) && ( ch <= 0x39 ) ) || ( ch == 0x3B ) || ( ch == 0x3A ) ) {
     return Transition( std::make_shared<Param>() );
   }
 
-  if ( ( ch == 0x3A ) || ( ( 0x3C <= ch ) && ( ch <= 0x3F ) ) ) {
+  if ( ( 0x3C <= ch ) && ( ch <= 0x3F ) ) {
     return Transition( &family->s_DCS_Ignore );
   }
 

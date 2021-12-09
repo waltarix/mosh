@@ -62,7 +62,8 @@ void DrawState::reinitialize_tabs( unsigned int start )
 DrawState::DrawState( int s_width, int s_height )
   : width( s_width ), height( s_height ), cursor_col( 0 ), cursor_row( 0 ), combining_char_col( 0 ),
     combining_char_row( 0 ), default_tabs( true ), tabs( s_width ), scrolling_region_top_row( 0 ),
-    scrolling_region_bottom_row( height - 1 ), renditions( 0 ), save(), next_print_will_wrap( false ),
+    scrolling_region_bottom_row( height - 1 ), renditions( 0 ), save(),
+    cursor_style( Terminal::CursorStyle::BLINKING_BLOCK ), next_print_will_wrap( false ),
     origin_mode( false ), auto_wrap_mode( true ), insert_mode( false ), cursor_visible( true ),
     reverse_video( false ), bracketed_paste( false ), mouse_reporting_mode( MOUSE_REPORTING_NONE ),
     mouse_focus_event( false ), mouse_alternate_scroll( false ), mouse_encoding_mode( MOUSE_ENCODING_DEFAULT ),
@@ -72,7 +73,8 @@ DrawState::DrawState( int s_width, int s_height )
 }
 
 Framebuffer::Framebuffer( int s_width, int s_height )
-  : rows(), icon_name(), window_title(), clipboard(), bell_count( 0 ), title_initialized( false ),
+  : rows(), icon_name(), window_title(), clipboard(), cursor_color(), bell_count( 0 ), cursor_color_reset_count( 0 ),
+    title_initialized( false ),
     ds( s_width, s_height )
 {
   assert( s_height > 0 );
@@ -84,7 +86,8 @@ Framebuffer::Framebuffer( int s_width, int s_height )
 
 Framebuffer::Framebuffer( const Framebuffer& other )
   : rows( other.rows ), icon_name( other.icon_name ), window_title( other.window_title ),
-    clipboard( other.clipboard ), bell_count( other.bell_count ), title_initialized( other.title_initialized ),
+    clipboard( other.clipboard ), cursor_color( other.cursor_color ),
+    bell_count( other.bell_count ), title_initialized( other.title_initialized ),
     ds( other.ds )
 {}
 
@@ -95,7 +98,9 @@ Framebuffer& Framebuffer::operator=( const Framebuffer& other )
     icon_name = other.icon_name;
     window_title = other.window_title;
     clipboard = other.clipboard;
+    cursor_color = other.cursor_color;
     bell_count = other.bell_count;
+    cursor_color_reset_count = other.cursor_color_reset_count;
     title_initialized = other.title_initialized;
     ds = other.ds;
   }
@@ -379,7 +384,9 @@ void Framebuffer::reset( void )
   rows = rows_type( height, newrow() );
   window_title.clear();
   clipboard.clear();
+  cursor_color.clear();
   /* do not reset bell_count */
+  /* do not reset cursor_color_reset_count */
 }
 
 void Framebuffer::soft_reset( void )
@@ -387,6 +394,7 @@ void Framebuffer::soft_reset( void )
   ds.insert_mode = false;
   ds.origin_mode = false;
   ds.cursor_visible = true; /* per xterm and gnome-terminal */
+  ds.cursor_style = Terminal::CursorStyle::BLINKING_BLOCK;
   ds.application_mode_cursor_keys = false;
   ds.set_scrolling_region( 0, ds.get_height() - 1 );
   ds.add_rendition( 0 );
@@ -445,7 +453,7 @@ void DrawState::resize( int s_width, int s_height )
 }
 
 Renditions::Renditions( color_type s_background )
-  : foreground_color( 0 ), background_color( s_background ), attributes( 0 )
+  : foreground_color( 0 ), background_color( s_background ), attributes( 0 ), underline_style( 0 )
 {}
 
 /* This routine cannot be used to set a color beyond the 16-color set. */
@@ -454,6 +462,7 @@ void Renditions::set_rendition( color_type num )
   if ( num == 0 ) {
     clear_attributes();
     foreground_color = background_color = 0;
+    underline_style = 0;
     return;
   }
 
@@ -528,6 +537,13 @@ void Renditions::set_background_color( int num )
   }
 }
 
+void Renditions::set_underline_style( uint8_t num )
+{
+  if ( ( 0 <= num ) && ( num <= 5 ) ) {
+    underline_style = num;
+  }
+}
+
 std::string Renditions::sgr( void ) const
 {
   std::string ret;
@@ -538,8 +554,15 @@ std::string Renditions::sgr( void ) const
     ret.append( ";1" );
   if ( get_attribute( italic ) )
     ret.append( ";3" );
-  if ( get_attribute( underlined ) )
+
+  if ( underline_style ) {
+    uint8_t us = underline_style;
+    snprintf( col, sizeof( col ), ";4:%d", us );
+    ret.append( col );
+  } else if ( get_attribute( underlined ) ) {
     ret.append( ";4" );
+  }
+
   if ( get_attribute( blink ) )
     ret.append( ";5" );
   if ( get_attribute( inverse ) )

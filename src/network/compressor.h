@@ -34,18 +34,25 @@
 #define COMPRESSOR_H
 
 #include <string>
+#include <stdint.h>
+#include <zstd.h>
 
 namespace Network {
 class Compressor
 {
 private:
-  static const int BUFFER_SIZE = 2048 * 2048; /* effective limit on terminal size */
+  size_t const bufferSize;
+  void* const buffer;
+  ZSTD_CCtx* const cctx;
+  ZSTD_DCtx* const dctx;
 
-  unsigned char buffer[BUFFER_SIZE];
+  const uint8_t level;
 
 public:
-  Compressor() : buffer() {}
-  ~Compressor() {}
+  static const int BUFFER_SIZE = 2048 * 2048; /* effective limit on terminal size */
+
+  Compressor( const size_t bufSize, const uint8_t level );
+  ~Compressor();
 
   std::string compress_str( const std::string& input );
   std::string uncompress_str( const std::string& input );

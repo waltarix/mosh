@@ -92,6 +92,7 @@ class Dispatcher
 private:
   std::string params;
   std::vector<int> parsed_params;
+  uint8_t parsed_underline_style;
   bool parsed;
 
   std::string dispatch_chars;
@@ -108,6 +109,7 @@ public:
   Dispatcher();
   int getparam( size_t N, int defaultval );
   int param_count( void );
+  uint8_t get_underline_style( void );
 
   void newparamchar( const Parser::Param* act );
   void collect( const Parser::Collect* act );

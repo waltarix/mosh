@@ -47,6 +47,16 @@
 namespace Terminal {
 using color_type = uint32_t;
 
+enum CursorStyle {
+  BLINKING_BLOCK = 0,
+  BLINKING_BLOCK_DEFAULT = 1,
+  STEADY_BLOCK = 2,
+  BLINKING_UNDERLINE = 3,
+  STEADY_UNDERLINE = 4,
+  BLINKING_BAR = 5,
+  STEADY_BAR = 6,
+};
+
 class Renditions
 {
 public:
@@ -67,11 +77,13 @@ private:
   uint64_t foreground_color : 25;
   uint64_t background_color : 25;
   uint64_t attributes : 8;
+  uint8_t underline_style;
 
 public:
   Renditions( color_type s_background );
   void set_foreground_color( int num );
   void set_background_color( int num );
+  void set_underline_style( uint8_t num );
   void set_rendition( color_type num );
   std::string sgr( void ) const;
 
@@ -88,7 +100,7 @@ public:
   bool operator==( const Renditions& x ) const
   {
     return ( attributes == x.attributes ) && ( foreground_color == x.foreground_color )
-           && ( background_color == x.background_color );
+           && ( background_color == x.background_color ) && ( underline_style == x.underline_style );
   }
   void set_attribute( attribute_type attr, bool val )
   {
@@ -275,6 +287,8 @@ private:
   SavedCursor save;
 
 public:
+  int cursor_style;
+
   bool next_print_will_wrap;
   bool origin_mode;
   bool auto_wrap_mode;
@@ -339,6 +353,8 @@ public:
   Renditions& get_renditions( void ) { return renditions; }
   int get_background_rendition( void ) const { return renditions.get_background_rendition(); }
 
+  void set_underline_style( uint8_t x ) { renditions.set_underline_style( x ); }
+
   void save_cursor( void );
   void restore_cursor( void );
   void clear_saved_cursor( void ) { save = SavedCursor(); }
@@ -353,6 +369,7 @@ public:
     return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
            && ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible )
            && ( reverse_video == x.reverse_video ) && ( renditions == x.renditions )
+           && ( cursor_style == x.cursor_style )
            && ( bracketed_paste == x.bracketed_paste ) && ( mouse_reporting_mode == x.mouse_reporting_mode )
            && ( mouse_focus_event == x.mouse_focus_event ) && ( mouse_alternate_scroll == x.mouse_alternate_scroll )
            && ( mouse_encoding_mode == x.mouse_encoding_mode );
@@ -383,7 +400,9 @@ private:
   title_type icon_name;
   title_type window_title;
   title_type clipboard;
+  title_type cursor_color;
   unsigned int bell_count;
+  unsigned int cursor_color_reset_count;
   bool title_initialized; /* true if the window title has been set via an OSC */
 
   row_pointer newrow( void )
@@ -462,9 +481,11 @@ public:
   void set_icon_name( const title_type& s ) { icon_name = s; }
   void set_window_title( const title_type& s ) { window_title = s; }
   void set_clipboard( const title_type& s ) { clipboard = s; }
+  void set_cursor_color( const title_type& s ) { cursor_color = s; }
   const title_type& get_icon_name( void ) const { return icon_name; }
   const title_type& get_window_title( void ) const { return window_title; }
   const title_type& get_clipboard( void ) const { return clipboard; }
+  const title_type& get_cursor_color( void ) const { return cursor_color; }
 
   void prefix_window_title( const title_type& s );
 
@@ -476,10 +497,15 @@ public:
   void ring_bell( void ) { bell_count++; }
   unsigned int get_bell_count( void ) const { return bell_count; }
 
+  void reset_cursor_color( void ) { cursor_color_reset_count++; }
+  unsigned int get_cursor_color_reset_count( void ) const { return cursor_color_reset_count; }
+
   bool operator==( const Framebuffer& x ) const
   {
     return ( rows == x.rows ) && ( window_title == x.window_title ) && ( clipboard == x.clipboard )
-           && ( bell_count == x.bell_count ) && ( ds == x.ds );
+           && ( cursor_color == x.cursor_color ) && ( bell_count == x.bell_count )
+           && ( cursor_color_reset_count == x.cursor_color_reset_count )
+           && ( ds == x.ds );
   }
 };
 }

@@ -325,8 +325,6 @@ int main( int argc, char* argv[] )
     my_argv[0] = const_cast<char*>( shell_name.c_str() );
     my_argv[1] = NULL;
     command_argv = my_argv;
-
-    with_motd = true;
   }
 
   if ( command_path.empty() ) {
@@ -577,12 +575,6 @@ static int run_server( const char* desired_ip,
       exit( 1 );
     }
 
-    /* ask ncurses to send UTF-8 instead of ISO 2022 for line-drawing chars */
-    if ( setenv( "NCURSES_NO_UTF8_ACS", "1", true ) < 0 ) {
-      perror( "setenv" );
-      exit( 1 );
-    }
-
     /* clear STY environment variable so GNU screen regards us as top level */
     if ( unsetenv( "STY" ) < 0 ) {
       perror( "unsetenv" );
@@ -645,11 +637,6 @@ static int run_server( const char* desired_ip,
       perror( "pledge() failed" );
       exit( 1 );
     }
-#endif
-
-#ifdef HAVE_UTEMPTER
-    /* make utmp entry */
-    utempter_add_record( master, utmp_entry );
 #endif
 
     try {
