@@ -37,6 +37,7 @@
 #include "network.h"
 #include "transportsender.h"
 #include "parser.h"
+#include "wcwidth9.h"
 
 #include <vector>
 #include <limits.h>
