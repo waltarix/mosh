@@ -54,6 +54,7 @@ std::string Display::close() const
 {
   return std::string( "\033[?1l\033[0m\033[?25h"
 		      "\033[?1003l\033[?1002l\033[?1001l\033[?1000l"
+		      "\033]112\007"
 		      "\033[?1015l\033[?1006l\033[?1005l" ) +
     std::string( rmcup ? rmcup : "" );
 }
@@ -120,6 +121,22 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
       frame.append( *i );
     }
     frame.append( '\007' );
+  }
+
+  /* has cursor color changed? */
+  if (f.get_cursor_color() != frame.last_frame.get_cursor_color()) {
+    frame.append( "\033]12;" );
+    const title_type &cursor_color( f.get_cursor_color() );
+    for ( title_type::const_iterator i = cursor_color.begin();
+          i != cursor_color.end();
+          i++ ) {
+      frame.append( *i );
+    }
+    frame.append( "\033\\" );
+  }
+  /* has cursor color reset? */
+  if ( f.get_cursor_color_reset_count() != frame.last_frame.get_cursor_color_reset_count() ) {
+    frame.append( "\033]112\007" );
   }
 
   /* has reverse video state changed? */
@@ -284,6 +301,13 @@ std::string Display::new_frame( bool initialized, const Framebuffer &last, const
     } else {
       frame.append( "\033[?25l" );
     }
+  }
+
+  /* has cursor style changed? */
+  if ( f.ds.cursor_style != frame.cursor_style ) {
+    char cursor_style_sequence_buf[6];
+    snprintf( cursor_style_sequence_buf, sizeof cursor_style_sequence_buf, "\033[%d q", f.ds.cursor_style );
+    frame.append( cursor_style_sequence_buf );
   }
 
   /* have renditions changed? */
@@ -483,6 +507,7 @@ bool Display::put_row( bool initialized, FrameState &frame, const Framebuffer &f
 FrameState::FrameState( const Framebuffer &s_last )
       : str(), cursor_x(0), cursor_y(0), current_rendition( 0 ),
 	cursor_visible( s_last.ds.cursor_visible ),
+	cursor_style( s_last.ds.cursor_style ),
 	last_frame( s_last )
 {
   /* Preallocate for better performance.  Make a guess-- doesn't matter for correctness */

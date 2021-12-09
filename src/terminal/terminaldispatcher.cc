@@ -45,14 +45,14 @@ using namespace Terminal;
 static const size_t MAXIMUM_CLIPBOARD_SIZE = 16*1024;
 
 Dispatcher::Dispatcher()
-  : params(), parsed_params(), parsed( false ), dispatch_chars(),
+  : params(), parsed_params(), parsed_underline_style(0), parsed( false ), dispatch_chars(),
     OSC_string(), terminal_to_host()
 {}
 
 void Dispatcher::newparamchar( const Parser::Param *act )
 {
   assert( act->char_present );
-  assert( (act->ch == ';') || ( (act->ch >= '0') && (act->ch <= '9') ) );
+  assert( (act->ch == ':') || (act->ch == ';') || ( (act->ch >= '0') && (act->ch <= '9') ) );
   if ( params.length() < 100 ) {
     /* enough for 16 five-char params plus 15 semicolons */
     params.push_back( act->ch );
@@ -73,6 +73,7 @@ void Dispatcher::clear( const Parser::Clear *act __attribute((unused)) )
 {
   params.clear();
   dispatch_chars.clear();
+  parsed_underline_style = 0;
   parsed = false;
 }
 
@@ -87,6 +88,13 @@ void Dispatcher::parse_params( void )
   const char *segment_begin = str;
 
   while ( 1 ) {
+    const char *underline_style_begin = strchr( segment_begin, ':' );
+    if ( ( underline_style_begin != NULL )
+         && ( 0 == strncmp( underline_style_begin - 1, "4:", 2 ) ) ) {
+      char *endptr;
+      parsed_underline_style = strtol( underline_style_begin + 1, &endptr, 10 );
+    }
+
     const char *segment_end = strchr( segment_begin, ';' );
     if ( segment_end == NULL ) {
       break;
@@ -154,6 +162,11 @@ int Dispatcher::param_count( void )
   }
 
   return parsed_params.size();
+}
+
+uint8_t Dispatcher::get_underline_style( void )
+{
+  return parsed_underline_style;
 }
 
 std::string Dispatcher::str( void )
