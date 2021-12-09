@@ -51,6 +51,16 @@ namespace Terminal {
   using shared::make_shared;
   typedef uint32_t color_type;
 
+  enum CursorStyle {
+    BLINKING_BLOCK = 0,
+    BLINKING_BLOCK_DEFAULT = 1,
+    STEADY_BLOCK = 2,
+    BLINKING_UNDERLINE = 3,
+    STEADY_UNDERLINE = 4,
+    BLINKING_BAR = 5,
+    STEADY_BAR = 6,
+  };
+
   class Renditions {
   public:
     typedef enum { bold, faint, italic, underlined, blink, inverse, invisible, SIZE } attribute_type;
@@ -275,6 +285,8 @@ namespace Terminal {
     SavedCursor save;
 
   public:
+    int cursor_style;
+
     bool next_print_will_wrap;
     bool origin_mode;
     bool auto_wrap_mode;
@@ -351,6 +363,7 @@ namespace Terminal {
       return ( width == x.width ) && ( height == x.height ) && ( cursor_col == x.cursor_col )
 	&& ( cursor_row == x.cursor_row ) && ( cursor_visible == x.cursor_visible ) &&
 	( reverse_video == x.reverse_video ) && ( renditions == x.renditions ) &&
+	( cursor_style == x.cursor_style ) &&
   ( bracketed_paste == x.bracketed_paste ) && ( mouse_reporting_mode == x.mouse_reporting_mode ) &&
   ( mouse_focus_event == x.mouse_focus_event ) && ( mouse_alternate_scroll == x.mouse_alternate_scroll) &&
   ( mouse_encoding_mode == x.mouse_encoding_mode );
@@ -380,7 +393,9 @@ namespace Terminal {
     title_type icon_name;
     title_type window_title;
     title_type clipboard;
+    title_type cursor_color;
     unsigned int bell_count;
+    unsigned int cursor_color_reset_count;
     bool title_initialized; /* true if the window title has been set via an OSC */
 
     row_pointer newrow( void )
@@ -453,9 +468,11 @@ namespace Terminal {
     void set_icon_name( const title_type &s ) { icon_name = s; }
     void set_window_title( const title_type &s ) { window_title = s; }
     void set_clipboard( const title_type &s ) { clipboard = s; }
+    void set_cursor_color( const title_type &s ) { cursor_color = s; }
     const title_type & get_icon_name( void ) const { return icon_name; }
     const title_type & get_window_title( void ) const { return window_title; }
     const title_type & get_clipboard( void ) const { return clipboard; }
+    const title_type & get_cursor_color( void ) const { return cursor_color; }
 
     void prefix_window_title( const title_type &s );
 
@@ -467,9 +484,18 @@ namespace Terminal {
     void ring_bell( void ) { bell_count++; }
     unsigned int get_bell_count( void ) const { return bell_count; }
 
+    void reset_cursor_color( void ) { cursor_color_reset_count++; }
+    unsigned int get_cursor_color_reset_count( void ) const { return cursor_color_reset_count; }
+
     bool operator==( const Framebuffer &x ) const
     {
-      return ( rows == x.rows ) && ( window_title == x.window_title ) && ( clipboard  == x.clipboard ) && ( bell_count == x.bell_count ) && ( ds == x.ds );
+      return ( rows == x.rows ) &&
+        ( window_title == x.window_title ) &&
+        ( clipboard  == x.clipboard ) &&
+        ( cursor_color == x.cursor_color ) &&
+        ( bell_count == x.bell_count ) &&
+        ( cursor_color_reset_count == x.cursor_color_reset_count ) &&
+        ( ds == x.ds );
     }
   };
 }
