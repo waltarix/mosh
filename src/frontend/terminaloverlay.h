@@ -37,6 +37,7 @@
 #include "src/network/transportsender.h"
 #include "src/terminal/parser.h"
 #include "src/terminal/terminalframebuffer.h"
+#include "src/util/wcwidth9.h"
 
 #include <climits>
 #include <vector>

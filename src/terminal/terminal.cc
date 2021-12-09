@@ -65,7 +65,7 @@ void Emulator::print( const Parser::Print* act )
    * Check for printing ISO 8859-1 first, it's a cheap way to detect
    * some common narrow characters.
    */
-  const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth( ch ) );
+  const int chwidth = ch == L'\0' ? -1 : ( Cell::isprint_iso8859_1( ch ) ? 1 : wcwidth9( ch ) );
 
   Cell* this_cell = fb.get_mutable_cell();
 
@@ -138,7 +138,7 @@ void Emulator::print( const Parser::Print* act )
     case -1: /* unprintable character */
       break;
     default:
-      assert( !"unexpected character width from wcwidth()" );
+      assert( !"unexpected character width from wcwidth9()" );
       break;
   }
 }

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.61])
-AC_INIT([mosh], [1.4.0], [mosh-devel@mit.edu])
+AC_INIT([mosh], [1.4.0-custom], [mosh-devel@mit.edu])
 AM_INIT_AUTOMAKE([foreign std-options -Wall -Werror -Wno-portability])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
@@ -242,16 +242,6 @@ AS_IF([test x"$with_utempter" != xno],
     [AS_IF([test x"$with_utempter" = xcheck],
       [AC_MSG_WARN([Unable to find libutempter; utmp entries will not be made.])],
       [AC_MSG_ERROR([--with-utempter was given but libutempter was not found.])])])])
-
-AC_ARG_ENABLE([static-zlib],
-  [AS_HELP_STRING([--enable-static-zlib], [Link zlib statically @<:@no@:>@])],
-  [], [enable_static_zlib="$enable_static_libraries"])
-AC_CHECK_LIB([z], [compress],
-  [ZLIB_LIBS=-lz
-   AS_IF([test "$enable_static_zlib" = yes],
-     [ZLIB_LIBS="-Wl,-Bstatic $ZLIB_LIBS -Wl,-Bdynamic"])
-   LIBS="$ZLIB_LIBS $LIBS"],
-  [AC_MSG_ERROR([Unable to find zlib.])])
 
 AC_SEARCH_LIBS([socket], [socket network])
 AC_SEARCH_LIBS([inet_addr], [nsl])
@@ -565,6 +555,9 @@ Check that protoc matches the installed protobuf headers and libraries.])])
    CPPFLAGS="$old_CPPFLAGS"],
   [AC_MSG_RESULT([no])
    AC_MSG_ERROR([Could not run protoc ($PROTOC).])])
+
+# Checks for zstd
+PKG_CHECK_MODULES([zstd], [libzstd])
 
 # Bash completion needs to ask where it goes if >= 2.0 is installed.
 AS_IF([test "$install_completion" != no],

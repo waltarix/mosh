@@ -43,6 +43,7 @@
 #endif
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
 #include <unistd.h>
 
 #include "src/crypto/byteorder.h"
@@ -161,10 +162,23 @@ Connection::Socket::Socket( int family ) : _fd( socket( family, SOCK_DGRAM, 0 ) 
   }
 #endif
 
-  //  int dscp = 0x92; /* OS X does not have IPTOS_DSCP_AF42 constant */
-  int dscp = 0x02; /* ECN-capable transport only */
-  if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof dscp ) < 0 ) {
-    //    perror( "setsockopt( IP_TOS )" );
+#ifdef IPTOS_DSCP_EF
+  int dscp = IPTOS_DSCP_EF;
+#else
+  int dscp = 0xb8;
+#endif
+
+  switch ( family ) {
+  case AF_INET:
+    if ( setsockopt( _fd, IPPROTO_IP, IP_TOS, &dscp, sizeof dscp ) < 0 ) {
+      //    perror( "setsockopt( IP_TOS )" );
+    }
+    break;
+  case AF_INET6:
+    if ( setsockopt( _fd, IPPROTO_IPV6, IPV6_TCLASS, &dscp, sizeof dscp ) < 0 ) {
+      //    perror( "setsockopt( IPV6_TCLASS )" );
+    }
+    break;
   }
 
   /* request explicit congestion notification on received datagrams */
