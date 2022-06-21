@@ -81,6 +81,7 @@ AC_ARG_ENABLE([fuzzing],
       AX_CHECK_COMPILE_FLAG([-fsanitize=fuzzer],
         [FUZZING_CFLAGS="$FUZZING_CFLAGS -fsanitize=fuzzer"], [
         AC_MSG_ERROR([Fuzzing requested, but compiler support not present])], [-Werror])
+      enable_fuzzing="yes"
       ;;
     *)
      AC_MSG_ERROR(["Unknown argument '$enableval' to --enable-fuzzing])
@@ -89,6 +90,7 @@ AC_ARG_ENABLE([fuzzing],
   [])
 AC_SUBST([FUZZING_CFLAGS])
 AC_SUBST([MISC_CXXFLAGS])
+AM_CONDITIONAL([FUZZING_ENABLED], [test x"$enable_fuzzing" = xyes])
 
 AC_ARG_ENABLE([asan],
   [AS_HELP_STRING([--enable-asan],
